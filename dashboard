@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catuaí Shopping — Dashboard Executivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#0a0d12; --surface:#111620; --surface2:#181e2a; --border:#1f2940;
+    --accent:#e8c547; --accent2:#3b82f6; --danger:#ef4444; --ok:#22c55e; --warn:#f97316;
+    --text:#e8eaf0; --muted:#6b7a99;
+    --font-display:'Bebas Neue',sans-serif; --font-body:'DM Sans',sans-serif; --font-mono:'DM Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh}
+  .shell{display:flex;min-height:100vh}
+  .sidebar{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+  .logo-wrap{padding:28px 20px 20px;border-bottom:1px solid var(--border)}
+  .logo-title{font-family:var(--font-display);font-size:22px;letter-spacing:2px;color:var(--accent)}
+  .logo-sub{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+  .nav{padding:16px 0;flex:1}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);border-left:3px solid transparent;transition:all .2s;letter-spacing:.3px}
+  .nav-item:hover{color:var(--text);background:var(--surface2)}
+  .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(232,197,71,.06)}
+  .nav-icon{font-size:15px;width:20px;text-align:center}
+  .sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.7}
+  .main{margin-left:220px;flex:1;padding:32px 36px}
+  .page{display:none;animation:fadeIn .3s ease}
+  .page.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px}
+  .page-title{font-family:var(--font-display);font-size:36px;letter-spacing:2px;line-height:1}
+  .page-sub{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.5px}
+  .badge{background:var(--surface2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;position:relative;overflow:hidden}
+  .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:.4}
+  .kpi-card.alert::before{background:var(--danger);opacity:1}
+  .kpi-card.ok::before{background:var(--ok);opacity:1}
+  .kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .kpi-value{font-family:var(--font-mono);font-size:26px;font-weight:500;line-height:1}
+  .kpi-value.red{color:var(--danger)} .kpi-value.green{color:var(--ok)} .kpi-value.yellow{color:var(--accent)}
+  .kpi-delta{font-size:11px;margin-top:6px;color:var(--muted)}
+  .kpi-delta span{color:var(--ok);font-weight:600} .kpi-delta span.down{color:var(--danger)}
+  .charts-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+  .charts-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+  .charts-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
+  .card-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px}
+  .card-title strong{color:var(--text);font-size:13px;font-weight:600;display:block;text-transform:none;letter-spacing:0;margin-bottom:2px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border)}
+  td{padding:10px 12px;border-bottom:1px solid rgba(31,41,64,.6);font-family:var(--font-mono);font-size:12px}
+  tr:last-child td{border-bottom:none} tr:hover td{background:rgba(255,255,255,.02)}
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+  .tag.danger{background:rgba(239,68,68,.15);color:var(--danger)} .tag.ok{background:rgba(34,197,94,.15);color:var(--ok)} .tag.warn{background:rgba(249,115,22,.15);color:var(--warn)}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px}
+  .bar-label{width:180px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+  .bar-track{flex:1;background:var(--surface2);border-radius:3px;height:8px}
+  .bar-fill{height:8px;border-radius:3px;background:var(--accent);transition:width .6s ease}
+  .bar-fill.blue{background:var(--accent2)} .bar-fill.dim{background:var(--muted)}
+  .bar-val{width:80px;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+  .chuva-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .chuva-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+  .chuva-icon{font-size:22px;margin-bottom:6px}
+  .chuva-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .chuva-num{font-family:var(--font-mono);font-size:18px;color:var(--text);font-weight:500}
+  .chuva-sub{font-size:10px;color:var(--muted);margin-top:4px}
+  .alerta-bar{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px}
+  .alerta-icon{font-size:20px}
+  .alerta-text{flex:1;font-size:13px;line-height:1.5}
+  .alerta-text strong{color:var(--danger)}
+  .alerta-val{font-family:var(--font-mono);font-size:22px;color:var(--danger);font-weight:500}
+  .estac-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+  ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-title">CATUAÍ</div>
+    <div class="logo-sub">Shopping Cascavel · BI Executivo</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('p1')"><span class="nav-icon">📊</span> Visão Executiva</div>
+    <div class="nav-item" onclick="showPage('p2')"><span class="nav-icon">👥</span> Fluxo & Clima</div>
+    <div class="nav-item" onclick="showPage('p3')"><span class="nav-icon">🚗</span> Estacionamento</div>
+    <div class="nav-item" onclick="showPage('p4')"><span class="nav-icon">⚡</span> Energia & Demanda</div>
+  </nav>
+  <div class="sidebar-footer">Dados: nov/2024 – fev/2026<br>Fonte: Supabase CSC-OP02<br>Schema: bi</div>
+</aside>
+<main class="main">
+
+<!-- P1 VISÃO EXECUTIVA -->
+<section class="page active" id="p1">
+  <div class="page-header">
+    <div><div class="page-title">VISÃO EXECUTIVA</div><div class="page-sub">Indicadores consolidados · Mar 2025 – Fev 2026</div></div>
+    <div class="badge">Último mês: fev/2026</div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Visitantes — Fev/2026</div><div class="kpi-value">335.932</div><div class="kpi-delta">Pico: <span>448.461</span> dez/25</div></div>
+    <div class="kpi-card alert"><div class="kpi-label">Ultrapassagem Acumulada</div><div class="kpi-value red">R$ 130.445</div><div class="kpi-delta"><span class="down">7 de 12 meses</span> com penalidade</div></div>
+    <div class="kpi-card"><div class="kpi-label">Custo Fatura — Fev/2026</div><div class="kpi-value yellow">R$ 353.605</div><div class="kpi-delta">Pico: R$ 389.344 jan/26</div></div>
+    <div class="kpi-card ok"><div class="kpi-label">Consumo Água — Jan/2026</div><div class="kpi-value green">7.094 m³</div><div class="kpi-delta">Média: <span>6.240 m³</span>/mês</div></div>
+  </div>
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title"><strong>Visitantes Mensais por Setor</strong>JAC (Jacarezinho) vs Lago</div>
+      <canvas id="cVis" height="100"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><strong>Custo Fatura COPEL</strong>Total × Ultrapassagem (R$)</div>
+      <canvas id="cFat" height="160"></canvas>
+    </div>
+  </div>
+  <div class="charts-row-3">
+    <div class="card"><div class="card-title"><strong>Demanda Máxima FP</strong>vs Contrato 2.200 kW</div><canvas id="cDem" height="160"></canvas></div>
+    <div class="card"><div class="card-title"><strong>Temperatura Média Mensal</strong>Sensor Schneider (°C)</div><canvas id="cTemp" height="160"></canvas></div>
+    <div class="card"><div class="card-title"><strong>Consumo de Água</strong>m³ mensais (jun/2025+)</div><canvas id="cAgua" height="160"></canvas></div>
+  </div>
+</section>
+
+<!-- P2 FLUXO & CLIMA -->
+<section class="page" id="p2">
+  <div class="page-header">
+    <div><div class="page-title">FLUXO & CLIMA</div><div class="page-sub">Entradas por porta · Impacto da chuva · Passarela</div></div>
+    <div class="badge">12 câmeras · Mar 2025 – Fev 2026</div>
+  </div>
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title"><strong>Ranking de Entradas por Câmera</strong>Total acumulado do período</div>
+      <div id="rankCam"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><strong>Distribuição por Setor</strong>JAC · Lago · Passarela</div>
+      <div style="max-width:240px;margin:0 auto"><canvas id="cPizza" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title"><strong>Impacto da Chuva no Comportamento dos Visitantes</strong>Média diária por categoria de precipitação · dados reais do período</div>
+    <div class="chuva-grid">
+      <div class="chuva-card"><div class="chuva-icon">☀️</div><div class="chuva-label">Sem Chuva</div><div class="chuva-num">10.832</div><div class="chuva-sub">entradas/dia · 253 dias</div><div class="chuva-sub" style="margin-top:6px">Passarela: 20,2%</div></div>
+      <div class="chuva-card"><div class="chuva-icon">🌦️</div><div class="chuva-label">Garoa / Fraca</div><div class="chuva-num">11.691</div><div class="chuva-sub">entradas/dia · 77 dias</div><div class="chuva-sub" style="margin-top:6px">Passarela: 20,0%</div></div>
+      <div class="chuva-card" style="border-color:rgba(249,115,22,.35)"><div class="chuva-icon">🌧️</div><div class="chuva-label">Moderada</div><div class="chuva-num" style="color:var(--warn)">10.981</div><div class="chuva-sub">entradas/dia · 22 dias</div><div class="chuva-sub" style="margin-top:6px;color:var(--warn)">Passarela: ↓14,7%</div></div>
+      <div class="chuva-card" style="border-color:rgba(249,115,22,.4)"><div class="chuva-icon">⛈️</div><div class="chuva-label">Forte</div><div class="chuva-num" style="color:var(--warn)">12.083</div><div class="chuva-sub">entradas/dia · 12 dias</div><div class="chuva-sub" style="margin-top:6px;color:var(--warn)">Passarela: ↓12,3%</div></div>
+      <div class="chuva-card" style="border-color:rgba(239,68,68,.4)"><div class="chuva-icon">🌊</div><div class="chuva-label">Muito Forte</div><div class="chuva-num" style="color:var(--danger)">8.309</div><div class="chuva-sub">entradas/dia · 1 dia</div><div class="chuva-sub" style="margin-top:6px;color:var(--danger)">−23% vs média</div></div>
+    </div>
+  </div>
+  <div class="charts-row-2">
+    <div class="card">
+      <div class="card-title"><strong>Centro Médico — Acessos Acumulados</strong>4 câmeras dedicadas (CV34/35/38/39)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div style="text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Total Entradas</div><div style="font-family:var(--font-mono);font-size:30px;color:var(--accent2)">625.047</div><div style="font-size:11px;color:var(--muted);margin-top:4px">16% do Lago</div></div>
+        <div style="text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Média Mensal</div><div style="font-family:var(--font-mono);font-size:30px;color:var(--accent2)">52.087</div><div style="font-size:11px;color:var(--muted);margin-top:4px">~1.736/dia</div></div>
+      </div>
+      <div style="padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Portas menos utilizadas (período completo)</div>
+        <div class="bar-row"><div class="bar-label">Lago Festval</div><div class="bar-track"><div class="bar-fill dim" style="width:3%"></div></div><div class="bar-val">50.769</div></div>
+        <div class="bar-row"><div class="bar-label">Lago CM Esq. 39</div><div class="bar-track"><div class="bar-fill dim" style="width:1%"></div></div><div class="bar-val">17.612</div></div>
+        <div class="bar-row"><div class="bar-label">Lago CM Dir. 38</div><div class="bar-track"><div class="bar-fill dim" style="width:0.8%"></div></div><div class="bar-val">12.855</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><strong>Visitantes Mensais × Chuva Acumulada</strong>JAC (Jacarezinho) + Lago vs chuva mensal mm</div>
+      <canvas id="cChuvaFluxo" height="195"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- P3 ESTACIONAMENTO -->
+<section class="page" id="p3">
+  <div class="page-header">
+    <div><div class="page-title">ESTACIONAMENTO</div><div class="page-sub">Permanência · Fluxo veicular · Passantes colégio</div></div>
+    <div class="badge">Nov 2024 – Fev 2026</div>
+  </div>
+  <div class="estac-kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Entradas Totais (período)</div><div class="kpi-value">1.633.393</div><div class="kpi-delta">Horário escolar: <span>10,2%</span></div></div>
+    <div class="kpi-card alert"><div class="kpi-label">Passantes Estimados — Colégio</div><div class="kpi-value yellow">39.741</div><div class="kpi-delta"><span class="down">23,8%</span> das entradas escolares não ficam</div></div>
+    <div class="kpi-card"><div class="kpi-label">Pessoas por Carro (dias secos)</div><div class="kpi-value">3,51</div><div class="kpi-delta">Chuva forte: <span>3,47</span> p/carro</div></div>
+  </div>
+  <div class="charts-row-2">
+    <div class="card">
+      <div class="card-title"><strong>Perfil de Permanência</strong>Distribuição por faixa de tempo (acumulado)</div>
+      <canvas id="cPerm" height="175"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><strong>Colégio — Passantes vs Clientes</strong>Horário escolar: delta entradas × saídas</div>
+      <div style="padding:12px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+          <div style="text-align:center;flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Entradas</div><div style="font-family:var(--font-mono);font-size:32px;color:var(--accent2)">166.784</div></div>
+          <div style="font-size:22px;color:var(--border)">−</div>
+          <div style="text-align:center;flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Saídas</div><div style="font-family:var(--font-mono);font-size:32px;color:var(--ok)">127.043</div></div>
+          <div style="font-size:22px;color:var(--border)">=</div>
+          <div style="text-align:center;flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Passantes</div><div style="font-family:var(--font-mono);font-size:32px;color:var(--danger)">39.741</div></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:12px;font-size:12px;color:var(--muted);line-height:1.7">
+          <strong style="color:var(--text)">Como identificamos:</strong> O sistema registra dois horários escolares: <strong style="color:var(--text)">7h</strong> (entrada manhã: 52.171 entradas, 46.862 saídas → delta 5.309) e <strong style="color:var(--text)">12h</strong> (saída almoço: 100.956 entradas, 69.207 saídas → delta 31.749). O colégio fica dentro do shopping, e pais de alunos usam o estacionamento para embarque/desembarque sem consumir no shopping.
+        </div>
+        <div style="margin-top:16px;background:var(--surface2);border-radius:6px;padding:12px">
+          <canvas id="cColegio" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><strong>Fluxo de Entradas por Tipo e Mês</strong>Rotativo · Credenciado · Mensalista</div>
+    <canvas id="cTipoVei" height="70"></canvas>
+  </div>
+</section>
+
+<!-- P4 ENERGIA -->
+<section class="page" id="p4">
+  <div class="page-header">
+    <div><div class="page-title">ENERGIA & DEMANDA</div><div class="page-sub">Demanda FP · Ultrapassagem · QGBTs · Correlação clima</div></div>
+    <div class="badge">Abr 2025 – Fev 2026</div>
+  </div>
+  <div class="alerta-bar">
+    <div class="alerta-icon">⚠️</div>
+    <div class="alerta-text"><strong>Ultrapassagem sistemática</strong> — 7 de 12 meses acima da tolerância ANEEL (2.310 kW). Causa raiz confirmada: acionamento de chillers adicionais nos fins de semana e alta temporada. Recomendação: elevar contrato FP para <strong>2.600 kW</strong>.</div>
+    <div class="alerta-val">R$ 130.445</div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card alert"><div class="kpi-label">Demanda Máx. Registrada</div><div class="kpi-value red">2.712 kW</div><div class="kpi-delta">nov/2025 — Black Friday</div></div>
+    <div class="kpi-card"><div class="kpi-label">Demanda Contratada FP</div><div class="kpi-value">2.200 kW</div><div class="kpi-delta">Tolerância: <span>2.310 kW</span> (+5%)</div></div>
+    <div class="kpi-card ok"><div class="kpi-label">Cenário Recomendado</div><div class="kpi-value green">2.600 kW</div><div class="kpi-delta">Economia: <span>R$ 34.500/ano</span></div></div>
+    <div class="kpi-card"><div class="kpi-label">Carga Base Noturna 00h–06h</div><div class="kpi-value yellow">343 kW</div><div class="kpi-delta">Potencial: <span>~74 MWh/ano</span></div></div>
+  </div>
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title"><strong>Demanda Máxima Mensal vs Contrato FP</strong>Pontos vermelhos = ultrapassagem da tolerância (2.310 kW)</div>
+      <canvas id="cDemFP" height="110"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><strong>Custo de Ultrapassagem por Mês</strong>Tarifa dobro sobre o excedente (R$)</div>
+      <canvas id="cUltra" height="160"></canvas>
+    </div>
+  </div>
+  <div class="charts-row-2">
+    <div class="card">
+      <div class="card-title"><strong>Simulação de Cenários — Demanda Contratada FP</strong>Custo total acumulado de 15 faturas</div>
+      <table>
+        <thead><tr><th>Cenário (kW)</th><th>Base FP</th><th>Ultrapassagem</th><th>Total</th><th>Economia</th></tr></thead>
+        <tbody>
+          <tr><td>2.200 (atual)</td><td>R$ 467.071</td><td><span class="tag danger">R$ 130.445</span></td><td>R$ 1.620.544</td><td>—</td></tr>
+          <tr><td>2.500</td><td>R$ 532.608</td><td><span class="tag warn">R$ 22.968</span></td><td>R$ 1.578.604</td><td style="color:var(--ok)">+ R$ 41.940</td></tr>
+          <tr style="background:rgba(232,197,71,.05)"><td><strong style="color:var(--accent)">2.600 ★ Rec.</strong></td><td>R$ 554.364</td><td><span class="tag ok">R$ 0</span></td><td><strong style="color:var(--accent)">R$ 1.577.392</strong></td><td style="color:var(--ok)"><strong>+ R$ 43.152</strong></td></tr>
+          <tr><td>2.700</td><td>R$ 572.615</td><td><span class="tag ok">R$ 0</span></td><td>R$ 1.595.643</td><td style="color:var(--ok)">+ R$ 24.902</td></tr>
+          <tr><td>2.800</td><td>R$ 593.654</td><td><span class="tag ok">R$ 0</span></td><td>R$ 1.616.682</td><td style="color:var(--muted)">+ R$ 3.863</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title"><strong>QGBTs — Perfil de Carga Horário (Fev/2026)</strong>QGBT 1.2 · CAG = QGBT 4.1 + 4.2 · Média real por hora</div>
+      <div style="background:rgba(232,197,71,.06);border:1px solid rgba(232,197,71,.2);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--muted);line-height:1.6">
+        <strong style="color:var(--accent)">⚠ Atenção:</strong> QGBT 1.2 cresce de forma contínua ao longo do dia (132→254 kW), sem queda ao meio-dia — investigar se cargas específicas estão sendo ligadas progressivamente. CAG apresenta alta variância (min 0 kW / max 977 kW) — comportamento esperado de chillers com controle por demanda.
+      </div>
+      <canvas id="cQGBT" height="195"></canvas>
+    </div>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx={p1:0,p2:1,p3:2,p4:3}[id];
+  document.querySelectorAll('.nav-item')[idx].classList.add('active');
+}
+
+const meses=['Mar/25','Abr/25','Mai/25','Jun/25','Jul/25','Ago/25','Set/25','Out/25','Nov/25','Dez/25','Jan/26','Fev/26'];
+const jac=[101345,189809,200660,187919,207960,199312,183760,184941,224476,258003,222574,191736];
+const lago=[84477,140146,135197,136145,137951,132622,126594,137324,152985,190458,165092,144196];
+const fat=[333267,336450,286239,254469,226995,239884,254203,274435,294917,338486,389344,353605];
+const ultra=[23250,16209,9397,0,0,0,0,0,6504,28921,27971,23411];
+const dem=[null,2349,1882,1767,1673,1724,1908,2315,2712,2695,2614,2564];
+const temp=[23.6,19.5,18.3,15.1,15.5,16.9,20.2,19.6,21.4,22.9,23.0,24.0];
+const agua=[null,null,null,5272,6309,5522,6765,5958,6159,6839,7094,5790];
+const chuva=[13.4,79.5,50.9,154.5,34.3,79.7,53.2,93.2,94.1,70.0,15.7,10.2];
+
+Chart.defaults.color='#6b7a99';
+Chart.defaults.font.family="'DM Sans',sans-serif";
+Chart.defaults.font.size=11;
+const g='rgba(31,41,64,.6)';
+const opt=(extra={})=>({responsive:true,plugins:{legend:{position:'top'}},...extra});
+
+// P1
+new Chart('cVis',{type:'bar',data:{labels:meses,datasets:[{label:'JAC',data:jac,backgroundColor:'#e8c547',stack:'s'},{label:'Lago',data:lago,backgroundColor:'#3b82f6',stack:'s'}]},options:{...opt(),scales:{x:{grid:{color:g},stacked:true},y:{grid:{color:g},stacked:true,ticks:{callback:v=>(v/1000).toFixed(0)+'k'}}}}});
+new Chart('cFat',{type:'bar',data:{labels:meses,datasets:[{label:'Total fatura',data:fat,backgroundColor:'rgba(59,130,246,.35)',borderColor:'#3b82f6',borderWidth:1},{label:'Ultrapassagem',data:ultra,backgroundColor:'rgba(239,68,68,.7)'}]},options:{...opt(),scales:{x:{grid:{color:g}},y:{grid:{color:g},ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k'}}}}});
+new Chart('cDem',{type:'line',data:{labels:meses,datasets:[{label:'Demanda Máx FP',data:dem,borderColor:'#e8c547',backgroundColor:'rgba(232,197,71,.1)',tension:.3,pointRadius:4,pointBackgroundColor:dem.map(v=>v&&v>2310?'#ef4444':'#e8c547')},{label:'Contrato 2.200',data:Array(12).fill(2200),borderColor:'#22c55e',borderDash:[5,5],pointRadius:0},{label:'Tolerância 2.310',data:Array(12).fill(2310),borderColor:'#f97316',borderDash:[3,3],pointRadius:0}]},options:{...opt(),scales:{x:{grid:{color:g}},y:{grid:{color:g},min:1500,ticks:{callback:v=>v+' kW'}}}}});
+new Chart('cTemp',{type:'line',data:{labels:meses,datasets:[{label:'Temp °C',data:temp,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.1)',tension:.4,fill:true,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:g}},y:{grid:{color:g},ticks:{callback:v=>v+'°C'}}}}});
+new Chart('cAgua',{type:'bar',data:{labels:meses,datasets:[{label:'m³',data:agua,backgroundColor:'rgba(59,130,246,.5)',borderColor:'#3b82f6',borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:g}},y:{grid:{color:g},ticks:{callback:v=>v+'m³'}}}}});
+
+// P2 ranking
+const cams=[{n:'JAC Marquise Esquerda',t:1651943,blue:false},{n:'Passarela Elevada',t:818322,blue:true},{n:'Lago Espaço Kids',t:512558,blue:false},{n:'JAC Marquise Direita',t:507147,blue:false},{n:'Lago CM Direita',t:311424,blue:false},{n:'Lago CM Esquerda',t:283156,blue:false},{n:'Lago Elev. Pan. 19',t:259262,blue:false},{n:'Lago Elev. Pan. 17',t:235551,blue:false},{n:'JAC Doca C',t:193405,blue:false},{n:'Lago Festval',t:50769,dim:true},{n:'Lago CM Esq. 39',t:17612,dim:true},{n:'Lago CM Dir. 38',t:12855,dim:true}];
+const rc=document.getElementById('rankCam');
+cams.forEach(c=>{const p=(c.t/1651943*100).toFixed(1);const cls=c.blue?'blue':c.dim?'dim':'';rc.innerHTML+=`<div class="bar-row"><div class="bar-label">${c.n}</div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${p}%"></div></div><div class="bar-val">${(c.t/1000).toFixed(0)}k</div></div>`});
+
+new Chart('cPizza',{type:'doughnut',data:{labels:['JAC','Lago','Passarela'],datasets:[{data:[2158901,1683135,818322],backgroundColor:['#e8c547','#3b82f6','rgba(107,122,153,.5)'],borderColor:'#111620',borderWidth:2}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+new Chart('cChuvaFluxo',{type:'bar',data:{labels:meses,datasets:[{label:'Visitantes',data:jac.map((j,i)=>j+lago[i]),backgroundColor:'rgba(59,130,246,.4)',borderColor:'#3b82f6',borderWidth:1,yAxisID:'y'},{label:'Chuva mm',data:chuva,type:'line',borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.1)',tension:.3,yAxisID:'y2',pointRadius:3}]},options:{responsive:true,scales:{x:{grid:{color:g}},y:{grid:{color:g},position:'left',ticks:{callback:v=>(v/1000).toFixed(0)+'k'}},y2:{grid:{display:false},position:'right',ticks:{callback:v=>v+'mm'}}}}});
+
+// P3 — TODOS DADOS REAIS DO BANCO
+
+// Permanência: faixas agregadas reais (acumulado do período)
+new Chart('cPerm',{type:'bar',
+  data:{
+    labels:['Até 30min','30–60min','1h–1h30','1h30–2h','2h–3h','3h–4h','4h–6h','6h–1 dia','+ 1 dia'],
+    datasets:[{
+      label:'Veículos',
+      data:[60453,188379,253850,211676,224834,97190,58628,54091,947],
+      backgroundColor:['#e8c547','#e8c547','#e8c547','#e8c547','#3b82f6','#3b82f6','#6b7a99','#6b7a99','#ef4444'],
+      borderRadius:3
+    }]
+  },
+  options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toLocaleString('pt-BR')} veículos`}}},
+    scales:{x:{grid:{color:g}},y:{grid:{color:g},ticks:{callback:v=>(v/1000).toFixed(0)+'k'}}}}
+});
+
+// Colégio: apenas 2 horários reais — 7h e 12h (is_horario_colegio = true)
+new Chart('cColegio',{type:'bar',
+  data:{
+    labels:['7h (manhã)','12h (almoço)'],
+    datasets:[
+      {label:'Entradas',data:[52171,100956],backgroundColor:'rgba(59,130,246,.7)',borderRadius:3},
+      {label:'Saídas',  data:[46862, 69207],backgroundColor:'rgba(34,197,94,.7)', borderRadius:3}
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR')}`}}},
+    scales:{x:{grid:{color:g}},y:{grid:{color:g},ticks:{callback:v=>(v/1000).toFixed(0)+'k'}}}}
+});
+
+// Tipo de veículo por mês — dados reais de perfil_permanencia_diario
+const mesesEst=['Nov/24','Dez/24','Jan/25','Fev/25','Mar/25','Abr/25','Mai/25','Jun/25','Jul/25','Ago/25','Set/25','Out/25','Nov/25','Dez/25','Jan/26','Fev/26'];
+const rot=[57158,80353,60903,53539,58663,63069,63780,52180,64152,63878,63446,62465,68135,91918,71117,61621];
+const cred=[1454,5132,4818,4752,4972,4921,5111,5084,5296,4801,5203,5322,5651,5254,5090,4719];
+const mens=[265,1638,2127,1970,2511,2530,2650,2629,2476,2290,2485,2548,2356,2200,2605,2702];
+new Chart('cTipoVei',{type:'bar',
+  data:{labels:mesesEst,datasets:[
+    {label:'Rotativo',   data:rot,  backgroundColor:'#e8c547',stack:'s'},
+    {label:'Credenciado',data:cred, backgroundColor:'#3b82f6',stack:'s'},
+    {label:'Mensalista', data:mens, backgroundColor:'#22c55e',stack:'s'}
+  ]},
+  options:{...opt(),scales:{x:{grid:{color:g},stacked:true},y:{grid:{color:g},stacked:true,ticks:{callback:v=>(v/1000).toFixed(0)+'k'}}}}
+});
+
+// P4
+new Chart('cDemFP',{type:'line',data:{labels:meses,datasets:[{label:'Demanda Máx FP',data:dem,borderColor:'#e8c547',backgroundColor:'rgba(232,197,71,.1)',tension:.3,fill:true,pointRadius:6,pointBackgroundColor:dem.map(v=>v&&v>2310?'#ef4444':'#22c55e'),pointBorderColor:dem.map(v=>v&&v>2310?'#ef4444':'#22c55e')},{label:'Contrato 2.200 kW',data:Array(12).fill(2200),borderColor:'#22c55e',borderDash:[5,5],pointRadius:0},{label:'Tolerância 2.310 kW',data:Array(12).fill(2310),borderColor:'#f97316',borderDash:[3,3],pointRadius:0},{label:'Proposta 2.600 kW',data:Array(12).fill(2600),borderColor:'rgba(59,130,246,.6)',borderDash:[8,4],pointRadius:0}]},options:{...opt(),scales:{x:{grid:{color:g}},y:{grid:{color:g},min:1500,ticks:{callback:v=>v+' kW'}}}}});
+new Chart('cUltra',{type:'bar',data:{labels:meses,datasets:[{label:'Custo ultrapassagem',data:ultra,backgroundColor:ultra.map(v=>v>0?'rgba(239,68,68,.7)':'rgba(34,197,94,.25)'),borderColor:ultra.map(v=>v>0?'#ef4444':'#22c55e'),borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:g}},y:{grid:{color:g},ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k'}}}}});
+
+// QGBT perfil horário — DADOS REAIS fev/2026 (média por hora)
+const horas=Array.from({length:24},(_,i)=>i+'h');
+// QGBT 1.2 — sobe continuamente ao longo do dia, sem queda ao meio-dia
+const q12=[164.2,146.4,138.6,132.3,132.1,136.8,132.9,138.1,156.3,167.2,215.2,219.4,230.8,240.1,252.4,237.0,231.2,229.7,238.4,249.9,253.7,251.2,234.5,177.2];
+// CAG (4.1+4.2 somados) — comportamento de chiller: liga/desliga, alta variância
+const cag=[108.8,118.6,122.4,126.2,130.0,135.2,155.6,220.8,248.6,298.4,527.2,547.8,550.6,567.0,621.8,652.4,683.0,626.0,619.2,572.0,544.2,541.0,440.4,84.8];
+new Chart('cQGBT',{type:'line',data:{labels:horas,datasets:[
+  {label:'QGBT 1.2',data:q12,borderColor:'#e8c547',backgroundColor:'rgba(232,197,71,.08)',tension:.4,fill:true,pointRadius:3,pointHoverRadius:5},
+  {label:'CAG (4.1+4.2)',data:cag,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',tension:.4,fill:true,pointRadius:3,pointHoverRadius:5}
+]},options:{responsive:true,
+  plugins:{legend:{position:'top'},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} kW`}}},
+  scales:{x:{grid:{color:g}},y:{grid:{color:g},ticks:{callback:v=>v+' kW'},title:{display:true,text:'Demanda média (kW)',color:'#6b7a99'}}},
+  annotation:{annotations:{almoco:{type:'line',xMin:12,xMax:12,borderColor:'rgba(249,115,22,.4)',borderWidth:1,borderDash:[4,4]}}}
+}});
+</script>
+</body>
+</html>
